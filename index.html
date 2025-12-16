@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[CEM] PodCast</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        /* Variáveis de Cor para Flat Design */
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1d1d1d;
+            --text-light: #ffffff;
+            --text-dim: #b3b3b3;
+            --accent-blue: #1ed760;
+            --border-color: #333333;
+            --header-dark: #0a0a0a;
+        }
+
+        /* RESET e Fonte */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 1. ESTRUTURA PRINCIPAL: Spotify-like */
+        .sidebar {
+            width: 250px;
+            background-color: var(--header-dark);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-between; 
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        /* Div interna para agrupar Nav e Biblioteca, separando do Footer */
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            margin-left: 250px; 
+            padding: 0 30px;
+            padding-bottom: 50px; /* GARANTE ESPAÇO EXTRA NO FIM DA ROLAGEM GERAL */
+            overflow-y: auto; 
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ---------------------------------------------------- */
+        /* CLASSES PARA CONTROLE DE VISIBILIDADE DAS VIEWS */
+        /* ---------------------------------------------------- */
+        .content-view {
+            padding-bottom: 50px; /* Valor base (o espaço extra virá de divs vazias ou padding maior por view) */
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            position: absolute;
+            width: 100%;
+            padding-right: 60px; 
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow-y: hidden;
+        }
+
+        .content-view.active {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+            overflow-y: visible;
+        }
+        /* ---------------------------------------------------- */
+
+
+        /* 2. ELEMENTOS DA BARRA LATERAL */
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s, background-color 0.2s;
+            border-radius: 4px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-light);
+            background-color: #2a2a2a;
+        }
+
+        .nav-link .material-icons {
+            margin-right: 15px;
+            font-size: 24px;
+            color: var(--accent-blue);
+        }
+
+        .library h3 {
+            color: var(--text-light);
+            font-size: 1rem;
+            margin: 20px 15px 10px;
+            text-transform: uppercase;
+        }
+        
+        /* NOVO: Estilo para o bloco de informações no footer do sidebar */
+        .sidebar-footer {
+            padding: 20px 15px 10px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .sidebar-footer p {
+            margin: 0;
+        }
+        
+        /* NOVO ESTILO: Destaca e Aumenta a Fonte dos Créditos */
+        .credit-text {
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            color: var(--text-light); 
+        }
+        /* Fim NOVO ESTILO */
+
+        
+        /* 3. CONTEÚDO PRINCIPAL (Área de Visualização) - ESTILOS GERAIS */
+        .header-content {
+            padding-top: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-dark);
+            z-index: 5;
+        }
+        
+        /* ESTILO HOME (Taças Brindando) */
+        #home-view {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-top: 100px;
+            padding-bottom: 250px; /* Espaço para rolagem na Home */
+        }
+        
+        #home-view h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        #home-view .tagline {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+        
+        /* HashTag Flutuante com Glow */
+        .floating-text {
+            border-radius: 50%; 
+            padding: 25px 40px; 
+            display: inline-block;
+            color: var(--accent-blue);
+            font-size: 1.8rem; 
+            font-weight: 700;
+            animation: float 5s ease-in-out infinite;
+            margin-top: 30px;
+            /* Efeito de neon verde */
+            box-shadow: 0 0 10px var(--accent-blue), 0 0 20px rgba(30, 215, 96, 0.8), inset 0 0 5px var(--accent-blue);
+            text-shadow: 0 0 7px var(--accent-blue);
+            border: 2px solid var(--accent-blue);
+            background-color: var(--bg-dark);
+            letter-spacing: 1px;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+            100% { transform: translateY(0px) scale(1); }
+        }
+
+        .brindando-icon {
+            font-size: 100px;
+            color: var(--accent-blue);
+            display: none; 
+        }
+        
+        /* REPRODUTOR DE VÍDEO (Player) */
+        .player-area {
+            background-color: var(--header-dark);
+            padding: 30px;
+            margin-top: 30px;
+            border-radius: 8px;
+            /* Removendo margem inferior aqui, vamos usar a div de espaçamento para controle total */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .player-area h2 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border: 4px solid var(--accent-blue); 
+            border-radius: 4px;
+        }
+        
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .video-wrapper iframe.active-player {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        #select-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            background: var(--header-dark);
+            transition: opacity 0.3s;
+        }
+        
+        /* Cards de Episódios - MANTIDOS */
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 40px 0;
+        }
+
+        .episode-card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .episode-card:hover {
+            background-color: #2a2a2a;
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 50px;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+
+        .episode-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--accent-blue);
+        }
+        /* Ajuste para o texto do card de suporte, conforme imagem_900496.png */
+        .episode-card.support-card {
+            border: 1px solid var(--accent-blue);
+            background: #0d0d0d; 
+        }
+        .episode-card.support-card:hover {
+             background-color: #1a1a1a;
+        }
+
+        /* Card de Apoio - Estilo do Círculo 'Taças' */
+        .taças-solos {
+            height: 80px; 
+            width: 80px; 
+            margin: 10px auto;
+            /* Efeito Glow Verde */
+            background: radial-gradient(circle, var(--accent-blue) 0%, rgba(30, 215, 96, 0.5) 70%, transparent 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--header-dark);
+            font-size: 1rem; 
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.2;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(30, 215, 96, 0.9);
+        }
+        
+        /* NOVO ESTILO PARA A VIEW DE BUSCA */
+        #search-view {
+            padding-top: 50px;
+            padding-bottom: 250px; /* AUMENTADO PARA DAR MAIS ESPAÇO EXTRA NA BUSCA */
+        }
+        
+        /* ---------------------------------------------------- */
+        /* Classes de Utilitários */
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        
+        <div class="sidebar-content">
+            <div class="logo">
+                <h2>Entrelinhas</h2>
+            </div>
+            
+            <a href="#" class="nav-link" data-target="home" onclick="showView(this, 'home'); return false;">
+                <span class="material-icons">home</span>
+                Início
+            </a>
+            <a href="#" class="nav-link" data-target="search" onclick="showView(this, 'search'); return false;">
+                <span class="material-icons">search</span>
+                Buscar Episódio
+            </a>
+
+            <div class="library">
+                <h3>Sua Biblioteca</h3>
+                <a href="#" class="nav-link" data-video-key="oficialato" data-title="Como Subir Rápido" onclick="loadVideo(this); showView(this, 'player'); return false;">
+                    <span class="material-icons">mic</span>
+                    Oficialato
+                </a>
+                <a href="#" class="nav-link" data-video-key="projetos" data-title="Como Enviar Projeto" onclick="loadVideo(this); showView(this, 'player'); return false;">
+                    <span class="material-icons">notes</span>
+                    Projetos
+                </a>
+                <div class="taças-brindando flex-center" style="margin-top: 20px; font-size: 0.8rem; background-color: var(--bg-card); padding: 10px; border-radius: 4px; color: var(--accent-blue);">
+                    #UmBrindeAoFuturo
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <p class="credit-text">Projeto idealizado por <span class="highlight-name">,Policial</span></p>
+            <p class="credit-text">Desenvolvido por <span class="highlight-name">Slintow</span></p>
+            <p class="credit-text">&copy; Todos os direitos reservados ao Centro de Elitização Militar</p>
+            </div>
+    </div>
+
+    <div class="main-content">
+    
+        <div id="home-view" class="content-view active">
+            <header class="header-content" style="border-bottom: none;">
+                <h1>Entrelinhas Podcast</h1>
+                <p class="tagline">Análises aprofundadas sobre carreira e projetos.</p>
+            </header>
+            
+            <span class="material-icons brindando-icon">wine_bar</span>
+            <span class="floating-text">#UMBRINDEAOFUTURO</span>
+
+            <p style="margin-top: 50px; color: var(--text-dim); max-width: 600px;">
+                Selecione um tema na sua Biblioteca ou use "Buscar Episódio" para começar a aprofundar suas análises sobre ascensão profissional e desenvolvimento de projetos de impacto.
+            </p>
+            </div>
+
+        <div id="player-view" class="content-view">
+            <div class="spotify-player">
+                <!-- Artwork e Info do Episódio -->
+                <div class="episode-artwork-section">
+                    <div class="episode-artwork">
+                        <img id="episode-artwork-img" class="artwork-image" src="https://i.imgur.com/1d0DeWS.png" alt="Episode Artwork" style="display: block;">
+                    </div>
+                    <div class="episode-info">
+                        <h3 id="episode-title">Como Subir Rápido no Oficialato</h3>
+                        <p id="episode-description">Entrelinhas Podcast • Carreira Militar</p>
+                        <div class="episode-tags">
+                            <span class="tag">Carreira</span>
+                            <span class="tag">Estratégia</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player de Vídeo -->
+                <div class="video-player-section">
+                    <div id="select-message" class="select-message">
+                        <span class="material-icons">play_circle_filled</span>
+                        <p>Selecione um episódio para começar</p>
+                    </div>
+                    
+                    <iframe 
+                        id="video-oficialato"
+                        data-video-key="oficialato"
+                        class="video-player-iframe active-player" 
+                        src="https://drive.google.com/file/d/1VGFaYqavSThNmYyq0Atp_pz1OSeZ0M1H/preview" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy"
+                    ></iframe>
+                    
+                    <iframe 
+                        id="video-projetos"
+                        data-video-key="projetos"
+                        class="video-player-iframe"
+                        src="https://drive.google.com/file/d/1J9rYo2ShXlUjoKA5wDF6YwTs1FlYZ4Uu/preview" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy"
+                    ></iframe>
+                </div>
+
+
+            </div>
+        </div>
+        
+        <div id="search-view" class="content-view">
+            <h2 style="margin-top: 20px; color: var(--text-light);">Episódios em Destaque</h2>
+            <p class="tagline" style="margin-bottom: 20px;">Escolha o tema de seu interesse:</p>
+
+            <div class="episode-grid">
+                
+                <div class="episode-card" data-video-key="oficialato" data-title="Como Subir Rápido no Oficialato" onclick="loadVideo(this); showView(this, 'player'); return false;">
+                    <span class="material-icons card-icon">trending_up</span>
+                    <h4>Suba Rápido no Oficialato</h4>
+                    <p>Descubra as táticas e mentalidade para acelerar sua ascensão hierárquica na carreira militar.</p>
+                </div>
+
+                <div class="episode-card" data-video-key="projetos" data-title="Elaboração de Projetos de Impacto" onclick="loadVideo(this); showView(this, 'player'); return false;">
+                    <span class="material-icons card-icon">architecture</span>
+                    <h4>Elaboração de Projetos de Impacto</h4>
+                    <p>Guia completo para estruturar, formatar e apresentar projetos que serão aprovados e farão a diferença.</p>
+                </div>
+                
+                <div class="episode-card support-card flex-center" style="flex-direction: column; text-align: center;" onclick="alert('Obrigado por querer apoiar o projeto!');">
+                    <div class="taças-solos">
+                        Taças
+                    </div>
+                    <h4 style="color: var(--text-light); margin-top: 5px;">Apoie o Projeto</h4>
+                    <p style="color: var(--text-dim);">Gostou do conteúdo? Compartilhe e junte-se aos que brindam o futuro!</p>
+                </div>
+
+            </div>
+            </div>
+
+    </div>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        /* =========================
+           RESPONSIVIDADE E CRÉDITOS
+        ========================= */
+        .highlight-name {
+            color: #1db954;
+            font-weight: 600;
+        }
+        
+        .credit-text {
+            font-size: 11px;
+            margin: 2px 0;
+        }
+        
+        /* =========================
+           SPOTIFY-STYLE PLAYER
+        ========================= */
+        .spotify-player {
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spotify-player::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(29,185,84,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Artwork e Info */
+        .episode-artwork-section {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .episode-artwork {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .artwork-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1db954 0%, #1ed760 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .artwork-placeholder .material-icons {
+            font-size: 48px;
+        }
+
+        .artwork-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .episode-info {
+            flex: 1;
+            color: white;
+        }
+
+        .episode-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .episode-info p {
+            margin: 0 0 15px 0;
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+        }
+
+        .episode-tags {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Player de Vídeo */
+        .video-player-section {
+            position: relative;
+            background: rgba(0,0,0,0.6);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            min-height: 300px;
+        }
+
+        .select-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.7);
+            z-index: 2;
+            backdrop-filter: blur(5px);
+        }
+
+        .select-message .material-icons {
+            font-size: 64px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .video-player-iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            display: none;
+        }
+
+        .video-player-iframe.active-player {
+            display: block;
+        }
+
+
+
+
+
+        /* Responsividade Completa */
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .main-content {
+                margin-left: 200px;
+            }
+            
+            .spotify-player {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .episode-artwork-section {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .episode-artwork {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .episode-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 10px;
+            }
+            
+            .spotify-player {
+                margin: 5px;
+                padding: 15px;
+                border-radius: 15px;
+            }
+            
+            .episode-artwork {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .episode-info h3 {
+                font-size: 18px;
+            }
+            
+            .video-player-section {
+                min-height: 200px;
+            }
+            
+            .video-player-iframe {
+                height: 200px;
+            }
+            
+            .episode-tags {
+                flex-wrap: wrap;
+            }
+        }
+
+
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        /**
+         * FUNÇÃO DE NAVEGAÇÃO: Controla qual seção principal é visível.
+         */
+        function showView(element, viewId) {
+            // 1. Remove a classe 'active' de todas as views
+            document.querySelectorAll('.content-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // 2. Adiciona a classe 'active' à view desejada
+            document.getElementById(`${viewId}-view`).classList.add('active');
+            
+            // 3. Gerencia o estado 'active' na sidebar
+            // Remove 'active' de todos os links da sidebar
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Adiciona 'active' no link da sidebar clicado
+            if (element) {
+                // Se for link direto (Início, Buscar)
+                if (element.getAttribute('data-target') === viewId) {
+                    element.classList.add('active');
+                }
+                // Se for link de biblioteca (que ativa o player)
+                else if (viewId === 'player' && element.getAttribute('data-video-key')) {
+                    element.classList.add('active');
+                    // Remove o 'active' do 'Buscar Episódio' se ele estiver ativo
+                    document.querySelector('.nav-link[data-target="search"]').classList.remove('active');
+                } else if (viewId !== 'player') {
+                     // Adiciona a classe ativa ao link de navegação que não é um vídeo.
+                    document.querySelector(`.nav-link[data-target="${viewId}"]`).classList.add('active');
+                }
+            }
+            
+            // Rola para o topo do main-content
+            document.querySelector('.main-content').scrollTop = 0;
+        }
+
+        /**
+         * FUNÇÃO DE REPRODUÇÃO: Alterna qual iframe é visível e atualiza info do episódio.
+         */
+        function loadVideo(element) {
+            const videoKey = element.getAttribute('data-video-key'); 
+            const videoTitle = element.getAttribute('data-title');
+            
+            const selectMessage = document.getElementById('select-message');
+            const episodeTitle = document.getElementById('episode-title');
+            
+            // Dados dos episódios
+            const episodeData = {
+                'oficialato': {
+                    title: 'Como Subir Rápido no Oficialato',
+                    description: 'Entrelinhas Podcast • Carreira Militar',
+                    tags: ['Carreira', 'Estratégia']
+                },
+                'projetos': {
+                    title: 'Elaboração de Projetos de Impacto',
+                    description: 'Entrelinhas Podcast • Desenvolvimento',
+                    tags: ['Projetos', 'Impacto']
+                }
+            };
+            
+            // Oculta todos os players ATIVOS
+            document.querySelectorAll('.video-player-iframe').forEach(player => {
+                player.classList.remove('active-player');
+            });
+            
+            // Encontra e ativa o player correto
+            const playerToActivate = document.getElementById(`video-${videoKey}`);
+            
+            if (playerToActivate) {
+                playerToActivate.classList.add('active-player');
+                selectMessage.classList.add('hidden');
+                
+                // Atualiza informações do episódio
+                const episode = episodeData[videoKey];
+                if (episode) {
+                    episodeTitle.textContent = episode.title;
+                    document.getElementById('episode-description').textContent = episode.description;
+                    
+                    // Atualiza tags
+                    const tagsContainer = document.querySelector('.episode-tags');
+                    tagsContainer.innerHTML = '';
+                    episode.tags.forEach(tag => {
+                        const tagElement = document.createElement('span');
+                        tagElement.className = 'tag';
+                        tagElement.textContent = tag;
+                        tagsContainer.appendChild(tagElement);
+                    });
+                }
+            } else {
+                console.error(`Player com a chave "${videoKey}" não foi pré-carregado!`);
+            }
+        }
+
+        
+        // Inicialização: Mostra a view 'home' e ativa o link 'Início'
+        window.onload = function() {
+            // Garante que a mensagem inicial fique por cima dos iframes no carregamento
+            const selectMessage = document.getElementById('select-message');
+            selectMessage.style.zIndex = 2; 
+            
+            // Ativa a view inicial 'home'
+            showView(document.querySelector('.nav-link[data-target="home"]'), 'home');
+            
+            // Garante que a Home View esteja ativa por padrão
+            document.getElementById('home-view').classList.add('active');
+            document.getElementById('player-view').classList.remove('active');
+        };
+    </script>
+</body>
+</html>
