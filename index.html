@@ -361,11 +361,8 @@
 </head>
 <body>
 
-    <button class="mobile-menu-btn" onclick="toggleSidebar()">
-        <span class="material-icons">menu</span>
-    </button>
-
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar">
+        
         <div class="sidebar-content">
             <div class="logo">
                 <h2>Entrelinhas</h2>
@@ -690,43 +687,16 @@
             }
         }
         
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1001;
-            background: var(--accent-blue);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);
-        }
-
         @media (max-width: 480px) {
-            .mobile-menu-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
             .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 280px;
-                position: fixed;
-            }
-            
-            .sidebar.open {
-                transform: translateX(0);
+                width: 100%;
+                height: auto;
+                position: relative;
             }
             
             .main-content {
                 margin-left: 0;
-                padding: 70px 10px 10px 10px;
+                padding: 10px;
             }
             
             .spotify-player {
@@ -875,11 +845,6 @@
             document.getElementById('home-view').classList.add('active');
             document.getElementById('player-view').classList.remove('active');
         };
-        
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
-        }
     </script>
 </body>
 </html>
